@@ -1,6 +1,7 @@
 from Pass import *
 from scipy.interpolate import interp1d
 from copy import copy, deepcopy
+import numpy as np
 
 class Scratch:
     def __init__(self,sScratch):
@@ -13,8 +14,6 @@ class Scratch:
         else:
             raise NameError('no such constructor')
         
-    
-        
     def meanScratch(self, scratchList):
         #mean depth from topo2 and mean fricCoeff from scratch  self and scratches from scratchList
         meanScr = deepcopy(self)
@@ -26,6 +25,32 @@ class Scratch:
         meanScr.scratch.fricCoeff = meanScr.scratch.fricCoeff/(len(scratchList)+1)
         return meanScr
         
+    @staticmethod
+    def meanScratchList( scratchList):
+        #mean depth from topo2 and mean fricCoeff from scratch  self and scratches from scratchList
+        desLen = len(scratchList[0].topo1.distance)
+        for scratch in scratchList[1:]:
+            desLen = min(desLen, len(scratch.topo1.distance))
+        meanScr = deepcopy(scratchList[0])
+        meanScr.truncate(desLen)
+        for scratch in scratchList[1:]:
+            scratch.truncate(desLen)
+            meanScr.topo2.depth = meanScr.topo2.depth + scratch.topo2.depth
+            meanScr.scratch.fricCoeff = meanScr.scratch.fricCoeff + scratch.scratch.fricCoeff
+        meanScr.topo2.depth = meanScr.topo2.depth/(len(scratchList))
+        meanScr.scratch.fricCoeff = meanScr.scratch.fricCoeff/(len(scratchList))
+        return meanScr
+
+    def truncate(self, desLen):
+        for pas in [ self.topo1, self.scratch, self.topo2 ]:
+            pas.distance = pas.distance[:desLen]
+            pas.load = pas.load[:desLen]
+            pas.depth = pas.depth[:desLen]
+            pas.friction = pas.friction[:desLen]
+            pas.acuEmiss = pas.acuEmiss[:desLen]
+            pas.fricCoeff = pas.fricCoeff[:desLen]
+
+
     def addBaseline(self):
         self.scratch.depth = self.scratch.depth - self.topo1.depth
         self.topo2.depth = self.topo2.depth - self.topo1.depth
@@ -33,45 +58,9 @@ class Scratch:
     
     # this method is for the case that one of the topographys or scratch is of different number of samples than the others, it interpolates the shorter one to correct this   
     def __equalLength(self):
-        
-        
-        if (len(self.topo1.depth) < len(self.scratch.depth)):
-            self.topo1.distance[0] = 0
-            self.topo1.distance[-1] = 501
-            
-            fDepth = interp1d(self.topo1.distance, self.topo1.depth, kind = 'cubic')
-            fLoad = interp1d(self.topo1.distance, self.topo1.load, kind = 'linear')
-            fFriction = interp1d(self.topo1.distance, self.topo1.friction, kind = 'cubic')
-            fAcuEmiss = interp1d(self.topo1.distance, self.topo1.acuEmiss, kind = 'cubic')
-            fFricCoeff = interp1d(self.topo1.distance, self.topo1.fricCoeff, kind = 'cubic')
-            
-            self.topo1.distance = copy(self.scratch.distance)
-            self.topo1.depth = fDepth(self.scratch.distance)
-            self.topo1.load = fLoad(self.topo1.distance)
-            self.topo1.friction = fFriction(self.topo1.distance)
-            self.topo1.acuEmiss = fAcuEmiss(self.topo1.distance)
-            self.topo1.fricCoeff = fFricCoeff(self.topo1.distance)
-            
-            
-        if (len(self.topo2.depth) < len(self.scratch.depth)):
-            self.topo2.distance[0] = 0
-            self.topo2.distance[-1] = 502
-            
-            fDepth = interp1d(self.topo2.distance, self.topo2.depth, kind = 'cubic')
-            fLoad = interp1d(self.topo2.distance, self.topo2.load, kind = 'linear')
-            fFriction = interp1d(self.topo2.distance, self.topo2.friction, kind = 'cubic')
-            fAcuEmiss = interp1d(self.topo2.distance, self.topo2.acuEmiss, kind = 'cubic')
-            fFricCoeff = interp1d(self.topo2.distance, self.topo2.fricCoeff, kind = 'cubic')
+        desLen = min( len(self.topo1.distance), len(self.scratch.distance), len(self.topo2.distance) )
+        self.truncate(desLen)
 
-            self.topo2.distance = copy(self.scratch.distance)
-            self.topo2.load = fLoad(self.topo2.distance)
-            self.topo2.depth = fDepth(self.topo2.distance)
-            self.topo2.friction = fFriction(self.topo2.distance)
-            self.topo2.acuEmiss = fAcuEmiss(self.topo2.distance)
-            self.topo2.fricCoeff = fFricCoeff(self.topo2.distance)
-            
-            
-            
     def maxDepthOfTopo2(self):
         return max(self.topo2.depth)
         
