@@ -45,7 +45,7 @@ def plot_scratch_samples(ax, sampleList, nameList, truncate=-1):
     
 
 def create_color(index, maxindex):
-    h = 250
+    h = 0.9
     if (index < maxindex/2):
         s = 1 
         v = index / (maxindex/2)
