@@ -40,6 +40,7 @@ def plot_scratch_samples(ax, sampleList, nameList, truncate=-1):
         meanScratches.append(Scratch.meanScratchList(sample))
         col = create_color(i, num)
         label = nameList[i][ nameList[i].rfind("/")+1: ]
+        label = nameList[i][ nameList[i].rfind("\\")+1: ]
         ax.plot( meanScratches[-1].topo2.distance, meanScratches[-1].topo2.depth, label=label, color = col)
         i = i + 1    
     ax.legend(loc='upper left')
