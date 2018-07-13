@@ -28,7 +28,7 @@ def read_pass_data(filePath):
         return pas
 
 
-def plot_scratch_samples(ax, sampleList, nameList, truncate=-1):
+def plot_scratch_samples(ax, sampleList, nameList, toPlot='depth', truncate=-1):
     meanScratches = []
     num = len(sampleList)
     i = 0
@@ -41,7 +41,17 @@ def plot_scratch_samples(ax, sampleList, nameList, truncate=-1):
         col = create_color(i, num)
         label = nameList[i][ nameList[i].rfind("/")+1: ]
         label = nameList[i][ nameList[i].rfind("\\")+1: ]
-        ax.plot( meanScratches[-1].topo2.distance, meanScratches[-1].topo2.depth, label=label, color = col)
+        
+        if toPlot == 'd':
+            yVar = meanScratches[-1].topo2.depth
+        elif toPlot == 'f':
+            yVar = meanScratches[-1].topo1.friction
+        elif toPlot == 'sd':
+            yVar = meanScratches[-1].scratch.depth
+        elif toPlot == 'ae':
+            yVar = meanScratches[-1].scratch.acuEmiss
+                
+        ax.plot( meanScratches[-1].topo2.distance, yVar, label=label, color = col)
         i = i + 1    
     ax.legend(loc='upper left')
     
@@ -57,15 +67,16 @@ def create_color(index, maxindex):
     #print ( [s,v])
     return colorsys.hsv_to_rgb(h,s,v)
 
-def plot_scratch_individual(ax, scratchList, truncate=-1):
+def plot_scratch_individual(ax, scratchList, toPlot='depth', truncate=-1):
     num = len(scratchList)
-    for idx,scratch in scratchList:
+    for i,scratch in enumerate(scratchList):
         scratch.addBaseline()
         scratch.truncate(truncate)
         scratch.topo2.depth = scratch.topo2.depth - scratch.topo2.depth[20]
         col = create_color(i, num)
-        label = "scratch: " + str(idx)
-        ax.plot( meanScratches[-1].topo2.distance, meanScratches[-1].topo2.depth, label=label, color = col) 
+        label = "scratch: " + str(i)
+        ax.plot( scratch.topo2.distance, scratch.topo2.depth, label=label, color = col) 
+    ax.legend(loc='upper left')
 
 
 
