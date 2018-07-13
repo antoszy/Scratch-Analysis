@@ -56,6 +56,21 @@ def create_color(index, maxindex):
         v = 1
     #print ( [s,v])
     return colorsys.hsv_to_rgb(h,s,v)
+
+def plot_scratch_individual(ax, scratchList, truncate=-1):
+    num = len(scratchList)
+    for idx,scratch in scratchList:
+        scratch.addBaseline()
+        scratch.truncate(truncate)
+        scratch.topo2.depth = scratch.topo2.depth - scratch.topo2.depth[20]
+        col = create_color(i, num)
+        label = "scratch: " + str(idx)
+        ax.plot( meanScratches[-1].topo2.distance, meanScratches[-1].topo2.depth, label=label, color = col) 
+
+
+
+
+
     
     
     
