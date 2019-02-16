@@ -1,5 +1,6 @@
 from Scratch import *
 from Pass import *
+from Wear import *
 import colorsys
 
 def read_data(filePath):
@@ -19,6 +20,21 @@ def read_data(filePath):
     
     return scratchList
 
+
+def read_wear_data(filePath):
+    wearList = []
+    file = open(filePath)
+    try:
+        sFile = file.read()
+    finally:
+        file.close()
+    
+    strList = sFile.split("\n\n")
+    
+    for swear in strList:
+        wearList.append(Wear(swear))
+        
+    return wearList 
 
     
 def read_pass_data(filePath):
@@ -55,9 +71,32 @@ def plot_scratch_samples(ax, sampleList, nameList, toPlot='depth', truncate=-1):
         i = i + 1    
     ax.legend(loc='upper left')
     
+def plot_wear_samples(ax, sampleList, nameList, color = 0.9, color_offset=0, xaxis = "time"):
+    meanWear = []
+    num = len(sampleList)
+    i = 0
+    for ind, sample in enumerate(sampleList):
+        for wear in sample:
+            col = create_color(ind+color_offset, num+color_offset, hue=color)
+            if (xaxis == "time"):
+                ax.plot(wear.time, wear.depth_max, label=nameList[ind], color = col)
+            else:
+                ax.plot(wear.depth_max, label=nameList[ind], color = col)
+            ax.legend(loc='upper left')
 
-def create_color(index, maxindex):
-    h = 0.9
+def plot_mean_wear_samples(ax, sampleList, nameList, color = 0.9, color_offset=0, xaxis = "time"):
+    meanWear = []
+    num = len(sampleList)
+    i = 0
+    for ind,wear in enumerate(sampleList):
+        col = create_color(ind+color_offset, num+color_offset, hue=color)
+        if (xaxis == "time"):
+            ax.plot(wear.time, wear.depth_min, label=nameList[ind], color = col)
+        else:
+            ax.plot(wear.depth_max, label=nameList[ind], color = col)
+        ax.legend(loc='upper left')
+
+def create_color(index, maxindex, hue = 0.9):
     if (index < maxindex/2):
         s = 1 
         v = index / (maxindex/2)
@@ -65,7 +104,7 @@ def create_color(index, maxindex):
         s = 2 - index / (maxindex/2)
         v = 1
     #print ( [s,v])
-    return colorsys.hsv_to_rgb(h,s,v)
+    return colorsys.hsv_to_rgb(hue,s,v)
 
 def plot_scratch_individual(ax, scratchList, toPlot='depth', truncate=-1):
     num = len(scratchList)

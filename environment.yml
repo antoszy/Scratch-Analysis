@@ -16,7 +16,7 @@ dependencies:
 #    - eventlet
 #    - flask-socketio
 #    - seaborn
-#    - pandas
+    - pandas
 #    - ffmpeg
 #    - imageio=2.1.2
 #    - pyqt=4.11.4
