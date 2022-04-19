@@ -17,7 +17,7 @@ class Scratch:
     def meanScratch(self, scratchList):
         #mean depth from topo2 and mean fricCoeff from scratch  self and scratches from scratchList
         meanScr = deepcopy(self)
-        print(meanScr.topo2)
+        # print(meanScr.topo2)
         for scratch in scratchList:
             meanScr.topo2.depth = meanScr.topo2.depth + scratch.topo2.depth
             meanScr.scratch.fricCoeff = meanScr.scratch.fricCoeff + scratch.scratch.fricCoeff
@@ -32,23 +32,34 @@ class Scratch:
         for scratch in scratchList[1:]:
             desLen = min(desLen, len(scratch.topo1.distance))
         meanScr = deepcopy(scratchList[0])
-        meanScr.truncate(desLen)
+        meanScr.truncate(desLen, left=True)
         for scratch in scratchList[1:]:
             scratch.truncate(desLen)
             meanScr.topo2.depth = meanScr.topo2.depth + scratch.topo2.depth
             meanScr.scratch.fricCoeff = meanScr.scratch.fricCoeff + scratch.scratch.fricCoeff
+            meanScr.scratch.friction = meanScr.scratch.friction + scratch.scratch.friction
         meanScr.topo2.depth = meanScr.topo2.depth/(len(scratchList))
         meanScr.scratch.fricCoeff = meanScr.scratch.fricCoeff/(len(scratchList))
+        meanScr.scratch.friction = meanScr.scratch.friction/len(scratchList)
         return meanScr
 
-    def truncate(self, desLen):
+    def truncate(self, desLen, left=False):
         for pas in [ self.topo1, self.scratch, self.topo2 ]:
-            pas.distance = pas.distance[:desLen]
-            pas.load = pas.load[:desLen]
-            pas.depth = pas.depth[:desLen]
-            pas.friction = pas.friction[:desLen]
-            pas.acuEmiss = pas.acuEmiss[:desLen]
-            pas.fricCoeff = pas.fricCoeff[:desLen]
+            if left:
+                first_sample = len(pas.distance)-desLen
+                pas.distance = pas.distance[first_sample:]
+                pas.load = pas.load[first_sample:]
+                pas.depth = pas.depth[first_sample:]
+                pas.friction = pas.friction[first_sample:]
+                pas.acuEmiss = pas.acuEmiss[first_sample:]
+                pas.fricCoeff = pas.fricCoeff[first_sample:]
+            else:
+                pas.distance = pas.distance[:desLen]
+                pas.load = pas.load[:desLen]
+                pas.depth = pas.depth[:desLen]
+                pas.friction = pas.friction[:desLen]
+                pas.acuEmiss = pas.acuEmiss[:desLen]
+                pas.fricCoeff = pas.fricCoeff[:desLen]
 
 
     def addBaseline(self):

@@ -3,8 +3,9 @@ from Pass import *
 from Wear import *
 import colorsys
 
+
 def read_data(filePath):
-    scratchList = []
+    scratch_list = []
     file = open(filePath)
     try:
         sFile = file.read()
@@ -14,11 +15,8 @@ def read_data(filePath):
     strList = sFile.split("\n\n\n")
     
     for strScratch in strList:
-        scratchList.append(Scratch(strScratch))
-        
-    #print( str(len(scratchList)) + " scratches imported")
-    
-    return scratchList
+        scratch_list.append(Scratch(strScratch))
+    return scratch_list
 
 
 def read_wear_data(filePath):
@@ -44,32 +42,115 @@ def read_pass_data(filePath):
         return pas
 
 
-def plot_scratch_samples(ax, sampleList, nameList, toPlot='depth', truncate=-1):
-    meanScratches = []
-    num = len(sampleList)
-    i = 0
-    for sample in sampleList:
+def plot_scratch_sample(ax, sample, title, toPlot='d'):
+    for scratch in sample:
+        scratch.addBaseline()
+        # scratch.truncate(truncate)
+        scratch.topo2.depth = scratch.topo2.depth - scratch.topo2.depth[20]
+
+    for i, scratch in enumerate(sample):
+        col = create_color_hue(i, len(sample))
+        label = str(i)
+
+        if toPlot == 'd':
+            yVar = scratch.topo2.depth
+            yLabel = "Gbokość zarysowania [nm]"
+        elif toPlot == 'f':
+            yVar = scratch.scratch.friction
+            yLabel = "Friction [mN]"
+        elif toPlot == 'tf':
+            yVar = scratch.topo1.friction
+            yLabel = "Friction [mN]"
+        elif toPlot == 'sd':
+            yVar = scratch.scratch.depth
+            yLabel = "Scratch depth [nm]"
+        elif toPlot == 'ae':
+            yVar = scratch.scratch.acuEmiss
+            yLabel = "Acustic emmision [mV]"
+        elif toPlot == 'fc':
+            yVar = scratch.scratch.fricCoeff
+            yLabel = "Friction Coefficient"
+        elif toPlot == 'l':
+            yVar = scratch.scratch.load
+            yLabel = "Load [mN]"
+        else:
+            raise NotImplementedError
+
+        ax.plot(scratch.topo2.distance, yVar, label=label, color = col, linestyle=create_linestyle(i))
+        ax.set_xlabel("Dystans [mm]")
+        ax.set_ylabel(yLabel)
+        ax.set_title(title)
+    ax.legend(loc='upper left')
+
+
+
+def preprocess_samples(sampleList, truncate=-1):
+    for i, sample in enumerate(sampleList):
         for scratch in sample:
             scratch.addBaseline()
             scratch.truncate(truncate)
             scratch.topo2.depth = scratch.topo2.depth - scratch.topo2.depth[20]
+            scratch.scratch.friction -= scratch.topo1.friction
+            scratch.scratch.fricCoeff = scratch.scratch.friction / scratch.scratch.load
+
+
+def plot_scratch_samples(ax, sampleList, nameList, toPlot='d', base='distance', legend="upper left"):
+    meanScratches = []
+    num = len(sampleList)
+    for i, sample in enumerate(sampleList):
         meanScratches.append(Scratch.meanScratchList(sample))
-        col = create_color(i, num)
+        # col = create_color(i, num, hue=0.1)
+        col = create_color_hue(i, num)
         label = nameList[i][ nameList[i].rfind("/")+1: ]
-        label = nameList[i][ nameList[i].rfind("\\")+1: ]
+        # label = nameList[i][ nameList[i].rfind("\\")+1: ]
+
+        if base == 'distance':
+            xVar = meanScratches[-1].scratch.distance
+            xLabel = 'Dystans [mm]'
+        elif base == 'load':
+            xVar = meanScratches[-1].scratch.load
+            xLabel = 'Obciążenie [mN]'
+        else:
+            raise NotImplementedError()
         
         if toPlot == 'd':
             yVar = meanScratches[-1].topo2.depth
+            yLabel = "Głębokość zarysowania [nm]"
+            title = "Głębokość zarysowania (pomiar wykonany po przeprowadzeniu testu)"
         elif toPlot == 'f':
+            yVar = meanScratches[-1].scratch.friction
+            yLabel = "Siła tarcia [mN]"
+            title = "Zależność siły tarcia od obciążenia wgłębnika"
+        elif toPlot == 'tf':
             yVar = meanScratches[-1].topo1.friction
+            yLabel = "Friction [mN]"
+            title = ""
         elif toPlot == 'sd':
             yVar = meanScratches[-1].scratch.depth
+            yLabel = "Scratch depth [nm]"
+            title = ""
         elif toPlot == 'ae':
             yVar = meanScratches[-1].scratch.acuEmiss
+            yLabel = "Acustic emmision [mV]"
+            title = ""
+        elif toPlot == 'fc':
+            yVar = meanScratches[-1].scratch.fricCoeff
+            yLabel = "Współczynnik tarcia"
+            title = "Zależność współczynnika tarcia dynamicznego od obciążenia wgłębnika"
+        elif toPlot == 'l':
+            yVar = meanScratches[-1].scratch.load
+            yLabel = "Obciążenie wgłębnika [mN]"
+            title = "Zmiany obciążenia wglębnika na długości zarysowania"
+        else:
+            raise NotImplementedError
                 
-        ax.plot( meanScratches[-1].topo2.distance, yVar, label=label, color = col)
-        i = i + 1    
-    ax.legend(loc='upper left')
+        ax.plot(xVar, yVar, label=label, color=col, linestyle=create_linestyle(i))
+        ax.set_xlabel(xLabel)
+        ax.set_ylabel(yLabel)
+        ax.set_title(title)
+        i = i + 1
+    if legend:
+        ax.legend(loc=legend)
     
 def plot_wear_samples(ax, sampleList, nameList, color = 0.9, color_offset=0, xaxis = "time"):
     meanWear = []
@@ -84,6 +165,7 @@ def plot_wear_samples(ax, sampleList, nameList, color = 0.9, color_offset=0, xax
                 ax.plot(wear.depth_max, label=nameList[ind], color = col)
             ax.legend(loc='upper left')
 
+
 def plot_mean_wear_samples(ax, sampleList, nameList, color = 0.9, color_offset=0, xaxis = "time"):
     meanWear = []
     num = len(sampleList)
@@ -96,6 +178,7 @@ def plot_mean_wear_samples(ax, sampleList, nameList, color = 0.9, color_offset=0
             ax.plot(wear.depth_max, label=nameList[ind], color = col)
         ax.legend(loc='upper left')
 
+
 def create_color(index, maxindex, hue = 0.9):
     if (index < maxindex/2):
         s = 1 
@@ -103,8 +186,21 @@ def create_color(index, maxindex, hue = 0.9):
     else:
         s = 2 - index / (maxindex/2)
         v = 1
-    #print ( [s,v])
-    return colorsys.hsv_to_rgb(hue,s,v)
+    return colorsys.hsv_to_rgb(hue, s, v)
+
+
+def create_color_hue(index, maxindex):
+    step = 1 / maxindex
+    s = 1
+    v = 0.8
+    hue = index * step
+    return colorsys.hsv_to_rgb(hue, s, v)
+
+
+def create_linestyle(index):
+    LINESTYLES = ['solid', 'dashed', 'dotted']
+    return LINESTYLES[index % 2]
+
 
 def plot_scratch_individual(ax, scratchList, toPlot='depth', truncate=-1):
     num = len(scratchList)
@@ -117,12 +213,3 @@ def plot_scratch_individual(ax, scratchList, toPlot='depth', truncate=-1):
         ax.plot( scratch.topo2.distance, scratch.topo2.depth, label=label, color = col) 
     ax.legend(loc='upper left')
 
-
-
-
-
-    
-    
-    
-    
-    
