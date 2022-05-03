@@ -42,46 +42,57 @@ def read_pass_data(filePath):
         return pas
 
 
-def plot_scratch_sample(ax, sample, title, toPlot='d'):
+def plot_scratch_sample(ax, sample, title, toPlot='d', base='distance'):
     for scratch in sample:
         scratch.addBaseline()
         # scratch.truncate(truncate)
         scratch.topo2.depth = scratch.topo2.depth - scratch.topo2.depth[20]
 
-    for i, scratch in enumerate(sample):
-        col = create_color_hue(i, len(sample))
-        label = str(i)
-
+        if base == 'distance':
+            xVar = scratch.scratch.distance
+            xLabel = 'Dystans [μm]'
+        elif base == 'load':
+            xVar = scratch.scratch.load
+            xLabel = 'Obciążenie [mN]'
+        else:
+            raise NotImplementedError()
+        
         if toPlot == 'd':
             yVar = scratch.topo2.depth
-            yLabel = "Gbokość zarysowania [nm]"
+            yLabel = "Głębokość zarysowania [nm]"
+            title = "Głębokość zarysowania (pomiar wykonany po przeprowadzeniu testu zarysowania)"
         elif toPlot == 'f':
             yVar = scratch.scratch.friction
-            yLabel = "Friction [mN]"
+            yLabel = "Siła tarcia [mN]"
+            title = "Zmiany siły tarcia na długości zarysowania"
         elif toPlot == 'tf':
             yVar = scratch.topo1.friction
-            yLabel = "Friction [mN]"
+            yLabel = "Siła tarcia [mN]"
+            title = ""
         elif toPlot == 'sd':
             yVar = scratch.scratch.depth
-            yLabel = "Scratch depth [nm]"
+            yLabel = "Głębokość [nm]"
+            title = ""
         elif toPlot == 'ae':
             yVar = scratch.scratch.acuEmiss
-            yLabel = "Acustic emmision [mV]"
+            yLabel = "Emisja akustyczna [mV]"
+            title = ""
         elif toPlot == 'fc':
             yVar = scratch.scratch.fricCoeff
-            yLabel = "Friction Coefficient"
+            yLabel = "Współczynnik tarcia"
+            title = "Zależność współczynnika tarcia dynamicznego od obciążenia wgłębnika"
         elif toPlot == 'l':
             yVar = scratch.scratch.load
-            yLabel = "Load [mN]"
+            yLabel = "Obciążenie wgłębnika [mN]"
+            title = "Zmiany obciążenia wgłębnika na długości zarysowania"
         else:
             raise NotImplementedError
 
-        ax.plot(scratch.topo2.distance, yVar, label=label, color = col, linestyle=create_linestyle(i))
-        ax.set_xlabel("Dystans [mm]")
+        ax.plot(xVar, yVar)
+        ax.set_xlabel(xLabel)
         ax.set_ylabel(yLabel)
         ax.set_title(title)
-    ax.legend(loc='upper left')
-
+    #ax.legend(loc='upper left')
 
 
 def preprocess_samples(sampleList, truncate=-1):
@@ -106,7 +117,7 @@ def plot_scratch_samples(ax, sampleList, nameList, toPlot='d', base='distance', 
 
         if base == 'distance':
             xVar = meanScratches[-1].scratch.distance
-            xLabel = 'Dystans [mm]'
+            xLabel = 'Dystans [μm]'
         elif base == 'load':
             xVar = meanScratches[-1].scratch.load
             xLabel = 'Obciążenie [mN]'
@@ -116,22 +127,22 @@ def plot_scratch_samples(ax, sampleList, nameList, toPlot='d', base='distance', 
         if toPlot == 'd':
             yVar = meanScratches[-1].topo2.depth
             yLabel = "Głębokość zarysowania [nm]"
-            title = "Głębokość zarysowania (pomiar wykonany po przeprowadzeniu testu)"
+            title = "Głębokość zarysowania (pomiar wykonany po przeprowadzeniu testu zarysowania)"
         elif toPlot == 'f':
             yVar = meanScratches[-1].scratch.friction
             yLabel = "Siła tarcia [mN]"
             title = "Zależność siły tarcia od obciążenia wgłębnika"
         elif toPlot == 'tf':
             yVar = meanScratches[-1].topo1.friction
-            yLabel = "Friction [mN]"
+            yLabel = "Siła tarcia [mN]"
             title = ""
         elif toPlot == 'sd':
             yVar = meanScratches[-1].scratch.depth
-            yLabel = "Scratch depth [nm]"
+            yLabel = "Głębokość [nm]"
             title = ""
         elif toPlot == 'ae':
             yVar = meanScratches[-1].scratch.acuEmiss
-            yLabel = "Acustic emmision [mV]"
+            yLabel = "Emisja akustyczna [mV]"
             title = ""
         elif toPlot == 'fc':
             yVar = meanScratches[-1].scratch.fricCoeff
@@ -140,7 +151,7 @@ def plot_scratch_samples(ax, sampleList, nameList, toPlot='d', base='distance', 
         elif toPlot == 'l':
             yVar = meanScratches[-1].scratch.load
             yLabel = "Obciążenie wgłębnika [mN]"
-            title = "Zmiany obciążenia wglębnika na długości zarysowania"
+            title = "Zmiany obciążenia wgłębnika na długości zarysowania"
         else:
             raise NotImplementedError
                 
@@ -152,30 +163,38 @@ def plot_scratch_samples(ax, sampleList, nameList, toPlot='d', base='distance', 
     if legend:
         ax.legend(loc=legend)
     
-def plot_wear_samples(ax, sampleList, nameList, color = 0.9, color_offset=0, xaxis = "time"):
+def plot_wear_samples(ax, sampleList, nameList, color = 0.9, color_offset=0, xaxis = "time", yaxis="min"):
     meanWear = []
     num = len(sampleList)
     i = 0
     for ind, sample in enumerate(sampleList):
         for wear in sample:
             col = create_color(ind+color_offset, num+color_offset, hue=color)
-            if (xaxis == "time"):
-                ax.plot(wear.time, wear.depth_max, label=nameList[ind], color = col)
+            if yaxis == "min":
+                ydata = wear.depth_min
             else:
-                ax.plot(wear.depth_max, label=nameList[ind], color = col)
-            ax.legend(loc='upper left')
+                ydata = wear.depth_max
+            if (xaxis == "time"):
+                ax.plot(wear.time, ydata, label=nameList[ind], color=col)
+            else:
+                ax.plot(ydata, label=nameList[ind], color=col)
+            #ax.legend(loc='upper left')
 
 
-def plot_mean_wear_samples(ax, sampleList, nameList, color = 0.9, color_offset=0, xaxis = "time"):
+def plot_mean_wear_samples(ax, sampleList, nameList, color = 0.9, color_offset=0, xaxis="time", yaxis="min"):
     meanWear = []
     num = len(sampleList)
     i = 0
     for ind,wear in enumerate(sampleList):
         col = create_color(ind+color_offset, num+color_offset, hue=color)
-        if (xaxis == "time"):
-            ax.plot(wear.time, wear.depth_min, label=nameList[ind], color = col)
+        if yaxis == "min":
+            ydata = wear.depth_min
         else:
-            ax.plot(wear.depth_max, label=nameList[ind], color = col)
+            ydata = wear.depth_max
+        if (xaxis == "time"):
+            ax.plot(wear.time, ydata, label=nameList[ind], color = col)
+        else:
+            ax.plot(ydata, label=nameList[ind], color = col)
         ax.legend(loc='upper left')
 
 

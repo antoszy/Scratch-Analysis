@@ -36,7 +36,11 @@ class Wear:
         self.friction = self.friction[start_ind:stop_ind]
         self.depth_max = self.depth_max[start_ind:stop_ind]
         self.depth_min = self.depth_min[start_ind:stop_ind]
-        
+
+    def trim_to_time(self, trim_time=6000):
+        end_index = np.argmax(self.time >= trim_time)
+        self.truncate(0, end_index)
+
     def correct_drift(self, drift_start, drift_stop):
         """ Function for correctig termal drift 
 
@@ -49,5 +53,6 @@ class Wear:
         self.depth = self.depth - slope_factor*self.time
         self.depth_max = self.depth_max - slope_factor*self.time
         self.depth_min = self.depth_min - slope_factor*self.time
+        #print(slope_factor*self.time[12000])
 
         
