@@ -164,20 +164,30 @@ def plot_scratch_samples(ax, sampleList, nameList, toPlot='d', base='distance', 
         ax.legend(loc=legend)
     
 def plot_wear_samples(ax, sampleList, nameList, color = 0.9, color_offset=0, xaxis = "time", yaxis="min"):
-    meanWear = []
-    num = len(sampleList)
+    sample_num = len(sampleList)
     i = 0
-    for ind, sample in enumerate(sampleList):
-        for wear in sample:
-            col = create_color(ind+color_offset, num+color_offset, hue=color)
+    for samp_ind, sample in enumerate(sampleList):
+        test_num = len(sample)
+        for test_ind, wear in enumerate(sample):
+            if sample_num == 1:
+                col = create_color(test_ind + color_offset, test_num + color_offset, hue=color)
+            else:
+                col = create_color(samp_ind + color_offset, sample_num + color_offset, hue=color)
             if yaxis == "min":
                 ydata = wear.depth_min
-            else:
+            elif yaxis == "friction":
+                ydata = wear.friction
+            elif yaxis == "max":
                 ydata = wear.depth_max
-            if (xaxis == "time"):
-                ax.plot(wear.time, ydata, label=nameList[ind], color=col)
+            elif yaxis == "friction_abs":
+                ydata = wear.friction_abs
             else:
-                ax.plot(ydata, label=nameList[ind], color=col)
+                ydata = getattr(wear, yaxis)
+
+            if (xaxis == "time"):
+                ax.plot(wear.time, ydata, label=nameList[samp_ind], color=col)
+            else:
+                ax.plot(ydata, label=nameList[samp_ind], color=col)
             #ax.legend(loc='upper left')
 
 
